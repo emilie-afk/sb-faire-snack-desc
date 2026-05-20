@@ -1,11 +1,12 @@
 // Netlify serverless function that fetches a URL server-side.
 // Used by the artifact to avoid browser CORS restrictions.
+// Requires ACCESS_PASSWORD env var to match the X-Access-Password header.
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: cors(), body: '' };
   }
-  // Password gate: same as ask-claude.
+  // Password gate
   const required = process.env.ACCESS_PASSWORD;
   if (!required) {
     return {
@@ -31,7 +32,6 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: 'Missing url query parameter.' }),
     };
   }
-  // Basic safety: only allow http(s) URLs
   if (!/^https?:\/\//i.test(url)) {
     return {
       statusCode: 400,
@@ -50,7 +50,7 @@ exports.handler = async (event) => {
     const raw = await res.text();
     const contentType = (res.headers.get('content-type') || '').toLowerCase();
     const isJson = contentType.includes('application/json') || contentType.includes('text/json');
-    // Pass JSON through untouched. Strip HTML for everything else so the model gets readable text.
+    // JSON passes through untouched. Strip HTML for everything else.
     const text = (isJson ? raw : stripHtml(raw)).slice(0, 50000);
     return {
       statusCode: 200,
@@ -58,4 +58,35 @@ exports.handler = async (event) => {
       body: JSON.stringify({ text, status: res.status, contentType }),
     };
   } catch (err) {
-    retu
+    return {
+      statusCode: 500,
+      headers: cors(),
+      body: JSON.stringify({ error: 'Fetch failed: ' + (err.message || String(err)) }),
+    };
+  }
+};
+
+function stripHtml(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function cors() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Access-Password',
+  };
+}

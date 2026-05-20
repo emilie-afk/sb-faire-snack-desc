@@ -1,8 +1,8 @@
 // Netlify serverless function that proxies prompts to the Anthropic Claude API.
-// Requires ANTHROPIC_API_KEY to be set as a Netlify environment variable.
+// Requires ANTHROPIC_API_KEY and ACCESS_PASSWORD env vars set in Netlify.
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-haiku-4-5-20251001'; // fast + inexpensive
+const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_TOKENS = 1024;
 
 exports.handler = async (event) => {
@@ -82,4 +82,28 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: 'Anthropic API error: ' + errText.slice(0, 500) }),
       };
     }
-    const data =
+    const data = await res.json();
+    const text = (data.content || [])
+      .map((block) => block.text || '')
+      .join('');
+    return {
+      statusCode: 200,
+      headers: { ...cors(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: cors(),
+      body: JSON.stringify({ error: 'Function error: ' + (err.message || String(err)) }),
+    };
+  }
+};
+
+function cors() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Access-Password',
+  };
+}
