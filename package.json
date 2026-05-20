@@ -1,0 +1,9 @@
+{
+  "name": "faire-desc-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Faire wholesale product description generator with brand library",
+  "engines": {
+    "node": ">=18"
+  }
+}
