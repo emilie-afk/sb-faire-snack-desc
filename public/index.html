@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Faire Description Generator</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #FAFAF8;
+  color: #1A1A1A;
+  margin: 0;
+  padding: 24px;
+  line-height: 1.5;
+  font-size: 14px;
+}
+h1 { font-size: 22px; margin: 0 0 4px 0; font-weight: 700; }
+.subtitle { color: #666; font-size: 13px; margin-bottom: 20px; }
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #E5E5E0;
+  margin-bottom: 20px;
+}
+.tab {
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab.active {
+  color: #1A1A1A;
+  border-bottom-color: #C97A3E;
+}
+.panel { display: none; }
+.panel.active { display: block; }
+.card {
+  background: white;
+  border: 1px solid #E5E5E0;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card h3 { margin: 0 0 12px 0; font-size: 15px; font-weight: 600; }
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+input[type="text"], input[type="url"], textarea, select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #D5D5CF;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+}
+textarea { resize: vertical; min-height: 90px; }
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #C97A3E;
+  box-shadow: 0 0 0 2px rgba(201, 122, 62, 0.15);
+}
+button.primary {
+  background: #1A1A1A;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+button.primary:hover { background: #333; }
+button.primary:disabled { background: #999; cursor: not-allowed; }
+button.secondary {
+  background: white;
+  color: #1A1A1A;
+  border: 1px solid #D5D5CF;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+button.secondary:hover { background: #F5F5F0; }
+button.tiny {
+  background: white;
+  color: #1A1A1A;
+  border: 1px solid #D5D5CF;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+button.tiny:hover { background: #F5F5F0; }
+button.danger { color: #B71C1C; border-color: #F5C6C5; }
+button.danger:hover { background: #FFEBEE; }
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.row > * { flex: 1; }
+.row > button { flex: 0 0 auto; }
+.output {
+  background: #FFFBF5;
+  border: 1px solid #E8DDC8;
+  border-radius: 8px;
+  padding: 16px;
+  white-space: pre-wrap;
+  font-family: ui-serif, Georgia, serif;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.status {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin: 12px 0;
+}
+.status.loading { background: #FFF3E0; color: #8B5A00; }
+.status.error { background: #FFEBEE; color: #B71C1C; }
+.status.success { background: #E8F5E9; color: #1B5E20; }
+.status.info { background: #E3F2FD; color: #0D47A1; }
+.csv-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+.csv-table th, .csv-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #EEE;
+  vertical-align: top;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.csv-table th { background: #F5F5F0; font-weight: 600; }
+.csv-table tr.processed { background: #F0F9F0; }
+.csv-table tr.processing { background: #FFF8E1; }
+.csv-table tr.error-row { background: #FFEBEE; }
+.progress-bar {
+  height: 6px;
+  background: #E5E5E0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: #C97A3E;
+  transition: width 0.3s;
+}
+.brand-library {
+  background: #F5F0E8;
+  border: 1px solid #E8DDC8;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.brand-library summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: #6B4D2A;
+}
+.brand-library[open] summary { margin-bottom: 12px; }
+.brand-card {
+  background: white;
+  border: 1px solid #E8DDC8;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.brand-card .brand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.brand-card .brand-header strong { font-size: 14px; }
+.brand-card .brand-header .actions { display: flex; gap: 6px; }
+.brand-card .field { margin-bottom: 10px; }
+.brand-card .field label { font-size: 11px; }
+.brand-card .field textarea { min-height: 60px; font-size: 13px; }
+.brand-card .field input { font-size: 13px; padding: 7px 10px; }
+.country-rule {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+.country-rule input { font-size: 13px; padding: 6px 10px; }
+.tip {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  margin-top: 4px;
+}
+.copy-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid #D5D5CF;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.copy-btn:hover { background: #F5F5F0; }
+.csv-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.kv { font-size: 12px; color: #666; }
+.kv strong { color: #1A1A1A; }
+.brand-badge {
+  display: inline-block;
+  background: #F5F0E8;
+  color: #6B4D2A;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+.auto-detect-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0;
+}
+.auto-detect-bar input { flex: 1; }
+.readonly-value {
+  padding: 8px 10px;
+  background: #FAFAF8;
+  border: 1px solid #EEE;
+  border-radius: 4px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  color: #1A1A1A;
+}
+.rule-display {
+  font-size: 13px;
+  padding: 4px 0;
+  color: #1A1A1A;
+}
+.locked-note {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
+}
+.login-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(250, 250, 248, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.login-card {
+  background: white;
+  border: 1px solid #E5E5E0;
+  border-radius: 12px;
+  padding: 28px 32px;
+  width: 360px;
+  max-width: 90%;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+.login-card h2 { margin: 0 0 6px 0; font-size: 18px; }
+.login-card .login-sub { color: #666; font-size: 13px; margin-bottom: 18px; }
+.login-error { background: #FFEBEE; color: #B71C1C; padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+.signout-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: white;
+  border: 1px solid #D5D5CF;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.signout-btn:hover { background: #F5F5F0; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="login-overlay" id="login-overlay" style="display:none;">
+  <div class="login-card">
+    <h2>Sign in</h2>
+    <div class="login-sub">Enter the access password to use the generator.</div>
+    <div class="login-error" id="login-error" style="display:none;"></div>
+    <input type="password" id="login-password" placeholder="Access password" autocomplete="current-password">
+    <button class="primary" id="login-btn" style="margin-top:12px; width:100%;">Sign in</button>
+  </div>
+</div>
+
+<button class="signout-btn" id="signout-btn" style="display:none;">Sign out</button>
+
+<h1>Faire Description Generator</h1>
+<div class="subtitle">Auto-detects the brand from a URL, learns the origin and country, then generates Faire-pattern descriptions.</div>
+
+<details class="brand-library" id="brand-library-details">
+  <summary>Brand library <span class="kv" id="brand-count-label"></span></summary>
+  <div style="margin-top: 12px;">
+    <div class="tip" style="margin-bottom: 10px;">When you paste a URL the artifact detects the brand from the domain. If it's a brand it doesn't know, it auto-fetches the homepage and creates a profile for you. You can edit any field after.</div>
+    <div class="auto-detect-bar">
+      <input type="url" id="auto-detect-url" placeholder="Paste any brand URL to auto-create a profile (e.g. https://acmesnacks.com/...)">
+      <button class="secondary" id="auto-detect-btn">Detect & add</button>
+    </div>
+    <div id="auto-detect-status"></div>
+    <div id="brands-container" style="margin-top: 12px;"></div>
+  </div>
+</details>
+
+<div class="tabs">
+  <button class="tab active" data-tab="single">Single product</button>
+  <button class="tab" data-tab="batch">Batch CSV</button>
+  <button class="tab" data-tab="faire">Faire XLSX</button>
+</div>
+
+<!-- SINGLE PRODUCT PANEL -->
+<div class="panel active" id="panel-single">
+  <div class="card">
+    <h3>Step 1. Provide product info</h3>
+    <div class="row">
+      <input id="single-url" type="url" placeholder="Paste a product URL (any brand)">
+      <button class="secondary" id="fetch-url-btn">Try fetch</button>
+    </div>
+    <div id="brand-detect-feedback" class="tip"></div>
+    <div style="margin-top: 16px;">
+      <label>Product info (paste anything: product copy, ingredients, weight, packaging)</label>
+      <textarea id="single-text" rows="8" placeholder="Example:
+Product name: YUMI Original Corn Stick
+Ingredients: Non-GMO Corn Grits, Vegetable Oil, Sugar, MSG, Full Cream Milk Powder, Salt
+Weight: 8.5g per stick, 20 sticks per polybag
+Packaging: Food-grade foil (not resealable)"></textarea>
+    </div>
+    <div style="margin-top: 14px; display: flex; gap: 8px; align-items: center;">
+      <button class="primary" id="generate-single-btn">Generate description</button>
+      <button class="secondary" id="clear-single-btn">Clear</button>
+    </div>
+  </div>
+
+  <div id="single-status"></div>
+
+  <div class="card" id="single-output-card" style="display:none;">
+    <h3>Generated Faire title</h3>
+    <div class="output" id="single-title-output" style="margin-bottom:12px; font-weight:600;"></div>
+    <button class="copy-btn" id="copy-single-title-btn" style="margin-bottom:16px;">Copy title</button>
+    <h3>Generated Faire description</h3>
+    <div class="output" id="single-output"></div>
+    <button class="copy-btn" id="copy-single-btn">Copy description</button>
+  </div>
+</div>
+
+<!-- BATCH PANEL -->
+<div class="panel" id="panel-batch">
+  <div class="card">
+    <h3>Step 1. Upload CSV</h3>
+    <div class="tip">One product per row. The artifact auto-detects each row's brand and learns any new brands it finds.</div>
+    <div style="margin-top: 12px;">
+      <input type="file" id="csv-file" accept=".csv,text/csv">
+    </div>
+    <div id="csv-preview-container"></div>
+  </div>
+
+  <div class="card" id="batch-controls-card" style="display:none;">
+    <h3>Step 2. Generate descriptions</h3>
+    <div class="csv-controls">
+      <button class="primary" id="generate-all-btn">Generate all</button>
+      <button class="secondary" id="cancel-batch-btn" style="display:none;">Cancel</button>
+      <button class="secondary" id="download-csv-btn" style="display:none;">Download result CSV</button>
+    </div>
+    <div class="progress-bar" id="progress-bar" style="display:none;">
+      <div class="fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div id="batch-status"></div>
+  </div>
+</div>
+
+<!-- FAIRE XLSX PANEL -->
+<div class="panel" id="panel-faire">
+  <div class="card">
+    <h3>Step 1. Upload Faire bulk-upload XLSX</h3>
+    <div class="tip">Upload the Faire product template file you exported from your Faire portal (Products &rarr; Export). The artifact updates ONLY the Product Name (title) and Description (English) columns. Prices, tokens, images, options, weights, dimensions, and all other columns/rows are preserved exactly.</div>
+    <div style="margin-top: 12px;">
+      <input type="file" id="faire-file" accept=".xlsx">
+    </div>
+    <div id="faire-preview-container"></div>
+  </div>
+
+  <div class="card" id="faire-controls-card" style="display:none;">
+    <h3>Step 2. Generate titles &amp; descriptions</h3>
+    <div class="tip">Each unique product is generated once and applied to all its variant rows. Products already having a title under 60 chars and a description over 200 chars are skipped by default.</div>
+    <div class="csv-controls" style="margin-top:12px;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#333;text-transform:none;letter-spacing:0;font-weight:400;">
+        <input type="checkbox" id="faire-overwrite" style="width:auto;"> Overwrite existing titles/descriptions
+      </label>
+    </div>
+    <div class="csv-controls" style="margin-top:12px;">
+      <button class="primary" id="faire-generate-btn">Generate all</button>
+      <button class="secondary" id="faire-cancel-btn" style="display:none;">Cancel</button>
+      <button class="secondary" id="faire-download-btn" style="display:none;">Download result XLSX</button>
+    </div>
+    <div class="progress-bar" id="faire-progress-bar" style="display:none;">
+      <div class="fill" id="faire-progress-fill" style="width:0%"></div>
+    </div>
+    <div id="faire-status"></div>
+  </div>
+</div>
+
+<script>
+// ============================
+// PASSWORD GATE
+// ============================
+function showLoginOverlay(errMsg) {
+  const overlay = document.getElementById('login-overlay');
+  const errEl = document.getElementById('login-error');
+  overlay.style.display = 'flex';
+  if (errMsg) { errEl.textContent = errMsg; errEl.style.display = 'block'; }
+  else { errEl.style.display = 'none'; }
+  document.getElementById('signout-btn').style.display = 'none';
+  document.getElementById('login-password').focus();
+}
+function hideLoginOverlay() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('signout-btn').style.display = 'inline-block';
+}
+// The password is checked with the server before the generator opens
+// (a free request: no guide load, no model call). It stays in memory only.
+document.getElementById('login-btn').addEventListener('click', async () => {
+  const pw = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  const fail = (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; };
+  if (!pw) { fail('Please enter a password.'); return; }
+  btn.disabled = true;
+  try {
+    const res = await fetch('/.netlify/functions/ask-claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Password': pw },
+      body: JSON.stringify({ task: 'check' }),
+    });
+    if (res.status === 401) { fail('Incorrect password. Try again.'); return; }
+    if (!res.ok) { fail('Sign-in is unavailable right now. Try again later.'); return; }
+    setStoredPassword(pw);
+    document.getElementById('login-password').value = '';
+    errEl.style.display = 'none';
+    hideLoginOverlay();
+  } catch (e) {
+    fail('Network error. Try again.');
+  } finally {
+    btn.disabled = false;
+  }
+});
+document.getElementById('login-password').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('login-btn').click();
+});
+document.getElementById('signout-btn').addEventListener('click', () => {
+  clearStoredPassword();
+  showLoginOverlay();
+});
+// Always show overlay on initial load (password is in-memory only)
+showLoginOverlay();
+
+// ============================
+// DEFAULT BRAND LIBRARY
+// ============================
+const DEFAULT_BRANDS = [
+  {
+    id: 'kettle-gourmet',
+    name: 'The Kettle Gourmet',
+    urlPattern: 'thekettlegourmet.com',
+    origin: "Founded in 2017, The Kettle Gourmet is Singapore's home of bold, hand-baked snacks. What started as founder Zac's kitchen experiment has grown into one of Asia's most loved gourmet snack brands, now hand-baking award-winning popcorn and YUMI corn sticks in an FDA-approved facility.",
+    defaultCountry: 'Singapore',
+    defaultBadges: 'Non-GMO Corn, FDA-approved facility',
+    countryRules: [
+      { keyword: 'YUMI', country: 'Malaysia' },
+      { keyword: 'Bronys', country: 'Malaysia' },
+      { keyword: 'Brownie Crisp', country: 'Malaysia' },
+    ],
+  },
+];
+
+const STORAGE_KEY = 'faire_brands_v3';
+// Bump this when DEFAULT_BRANDS is updated from chat — forces a merge on next load.
+const BRAND_DATA_VERSION = 1;
+
+function loadBrands() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [...DEFAULT_BRANDS];
+    const parsed = JSON.parse(raw);
+    const stored = Array.isArray(parsed) ? parsed : (parsed.brands || []);
+    const storedVersion = (parsed && parsed._version) || 0;
+    if (storedVersion < BRAND_DATA_VERSION) {
+      // Merge: defaults override; preserve any auto-added brands by urlPattern
+      const defaultDomains = new Set(DEFAULT_BRANDS.map(b => (b.urlPattern || '').toLowerCase()));
+      const preserved = stored.filter(b => !defaultDomains.has((b.urlPattern || '').toLowerCase()));
+      const merged = [...DEFAULT_BRANDS, ...preserved];
+      saveBrands(merged);
+      return merged;
+    }
+    return stored;
+  } catch (e) { console.warn('Failed to load brands', e); }
+  return [...DEFAULT_BRANDS];
+}
+function saveBrands(brands) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ _version: BRAND_DATA_VERSION, brands })); }
+  catch (e) { console.warn('Failed to save brands', e); }
+}
+let BRANDS = loadBrands();
+
+// ============================
+// PROMPTS
+// ============================
+// The listing guide and prompts live on the server (private configuration).
+// The page sends only the product info, the detected brand and the country.
+
+function parseGenerated(raw) {
+  const text = String(raw || '').trim();
+  const m = text.match(/^\s*TITLE\s*:\s*([^\n]+)\s*\n+DESCRIPTION\s*:\s*([\s\S]+)$/i);
+  if (m) {
+    return { title: m[1].trim(), description: m[2].trim() };
+  }
+  // Fallback: try to split on "DESCRIPTION:" only
+  const idx = text.search(/\n\s*DESCRIPTION\s*:\s*/i);
+  if (idx > -1) {
+    const before = text.slice(0, idx).replace(/^\s*TITLE\s*:\s*/i, '').trim();
+    const after = text.slice(idx).replace(/^\s*\n?\s*DESCRIPTION\s*:\s*/i, '').trim();
+    return { title: before, description: after };
+  }
+  // Total fallback: treat first line as title, rest as description
+  const parts = text.split(/\n\s*\n/);
+  if (parts.length > 1) return { title: parts[0].replace(/^\s*TITLE\s*:\s*/i, '').trim(), description: parts.slice(1).join('\n\n').trim() };
+  return { title: '', description: text };
+}
+
+// ============================
+// BRAND DETECTION
+// ============================
+function extractDomain(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, '');
+  } catch (e) { return null; }
+}
+function extractFirstUrl(text) {
+  if (!text) return null;
+  const m = String(text).match(/https?:\/\/[^\s"'<>]+/);
+  return m ? m[0] : null;
+}
+function detectBrand(input) {
+  if (!input) return null;
+  const lower = String(input).toLowerCase();
+  for (const b of BRANDS) {
+    if (b.urlPattern && lower.includes(b.urlPattern.toLowerCase())) return b;
+  }
+  for (const b of BRANDS) {
+    if (b.name && lower.includes(b.name.toLowerCase())) return b;
+  }
+  return null;
+}
+function detectCountry(brand, input) {
+  if (!brand) return 'United States';
+  const lower = String(input).toLowerCase();
+  for (const r of (brand.countryRules || [])) {
+    if (r.keyword && lower.includes(r.keyword.toLowerCase())) return r.country || brand.defaultCountry;
+  }
+  return brand.defaultCountry || 'United States';
+}
+
+// ============================
+// AUTO-DETECT BRAND FROM URL
+// ============================
+async function fetchWithFallback(domain) {
+  const candidates = [
+    `https://${domain}/`,
+    `https://${domain}/pages/welcome`,
+    `https://${domain}/pages/about`,
+    `https://${domain}/about`,
+    `https://${domain}/pages/our-story`,
+    `https://${domain}/about-us`,
+  ];
+  for (const u of candidates) {
+    try {
+      const text = await smartFetch(u);
+      const s = String(text || '');
+      if (s.length > 500) return { url: u, content: s.slice(0, 12000) };
+    } catch (e) { /* try next */ }
+  }
+  throw new Error('Could not fetch brand info from ' + domain);
+}
+
+function extractJsonLoose(text) {
+  if (!text) throw new Error('No text to parse');
+  try { return JSON.parse(text); } catch (e) {}
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) { try { return JSON.parse(fenced[1]); } catch (e) {} }
+  const m = text.match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+  throw new Error('Could not parse JSON');
+}
+
+async function autoGenerateBrandFromUrl(url) {
+  const domain = extractDomain(url);
+  if (!domain) throw new Error('Invalid URL');
+  // Already in library?
+  const existing = BRANDS.find(b => b.urlPattern && b.urlPattern.toLowerCase() === domain.toLowerCase());
+  if (existing) return existing;
+  const { url: fetchedUrl, content } = await fetchWithFallback(domain);
+  const text = await callClaude({ task: 'brand-profile', website: fetchedUrl, content });
+  const parsed = extractJsonLoose(String(text));
+  const profile = {
+    id: 'brand-' + Date.now(),
+    name: parsed.name || domain,
+    urlPattern: domain,
+    origin: (parsed.origin || '').replace(/—/g, ',').replace(/–/g, ','),
+    defaultCountry: parsed.defaultCountry || 'United States',
+    defaultBadges: parsed.defaultBadges || 'FDA-approved facility',
+    countryRules: [],
+  };
+  BRANDS.push(profile);
+  saveBrands(BRANDS);
+  renderBrandLibrary();
+  return profile;
+}
+
+// ============================
+// BRAND LIBRARY UI
+// ============================
+function renderBrandLibrary() {
+  const container = document.getElementById('brands-container');
+  container.innerHTML = '';
+  BRANDS.forEach((b, idx) => container.appendChild(renderBrandCard(b, idx)));
+  document.getElementById('brand-count-label').textContent = '(' + BRANDS.length + ' brand' + (BRANDS.length === 1 ? '' : 's') + ')';
+}
+function renderBrandCard(brand, idx) {
+  const card = document.createElement('div');
+  card.className = 'brand-card';
+  const rulesHtml = (brand.countryRules && brand.countryRules.length)
+    ? brand.countryRules.map(r => `<div class="rule-display">• If product contains "<strong>${escapeHtml(r.keyword)}</strong>" → ${escapeHtml(r.country)}</div>`).join('')
+    : '<div class="locked-note">No country overrides</div>';
+  card.innerHTML = `
+    <div class="brand-header">
+      <strong>${escapeHtml(brand.name || 'Untitled')}</strong>
+      <div class="actions">
+        <button class="tiny" data-action="toggle">View</button>
+      </div>
+    </div>
+    <div class="brand-body" style="display:none;">
+      <div class="field"><label>URL pattern</label><div class="readonly-value">${escapeHtml(brand.urlPattern || '(none)')}</div></div>
+      <div class="field"><label>Origin paragraph</label><div class="readonly-value">${escapeHtml(brand.origin || '(none)')}</div></div>
+      <div class="field"><label>Default country</label><div class="readonly-value">${escapeHtml(brand.defaultCountry || '(none)')}</div></div>
+      <div class="field"><label>Always-include badges</label><div class="readonly-value">${escapeHtml(brand.defaultBadges || '(none)')}</div></div>
+      <div class="field"><label>Country override rules</label>${rulesHtml}</div>
+      <div class="locked-note" style="margin-top:8px;">Brand is locked. To edit or delete, ask Claude in chat.</div>
+    </div>
+  `;
+  card.addEventListener('click', (e) => {
+    const action = e.target.getAttribute('data-action');
+    if (action === 'toggle') {
+      const body = card.querySelector('.brand-body');
+      const isOpen = body.style.display !== 'none';
+      body.style.display = isOpen ? 'none' : 'block';
+      e.target.textContent = isOpen ? 'View' : 'Hide';
+    }
+  });
+  return card;
+}
+
+document.getElementById('auto-detect-btn').addEventListener('click', async () => {
+  const url = document.getElementById('auto-detect-url').value.trim();
+  if (!url) { showStatus('auto-detect-status', 'error', 'Paste a URL first.'); return; }
+  const btn = document.getElementById('auto-detect-btn');
+  btn.disabled = true;
+  showStatus('auto-detect-status', 'loading', 'Fetching homepage and extracting brand profile...');
+  try {
+    const brand = await autoGenerateBrandFromUrl(url);
+    showStatus('auto-detect-status', 'success', 'Added: ' + brand.name + ' (country: ' + brand.defaultCountry + ')');
+    document.getElementById('auto-detect-url').value = '';
+  } catch (e) {
+    showStatus('auto-detect-status', 'error', 'Auto-detect failed: ' + (e.message || e));
+  } finally { btn.disabled = false; }
+});
+
+renderBrandLibrary();
+
+// ============================
+// TABS
+// ============================
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ============================
+// UTILS
+// ============================
+function showStatus(containerId, type, message) {
+  document.getElementById(containerId).innerHTML = `<div class="status ${type}">${message}</div>`;
+}
+function clearStatus(containerId) { document.getElementById(containerId).innerHTML = ''; }
+function sanitizeOutput(text) { return (text || '').replace(/—/g, ',').replace(/–/g, ','); }
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+async function ensureBrand(input) {
+  let brand = detectBrand(input);
+  if (brand) return brand;
+  // No match — try auto-detecting from any URL we can find
+  const url = extractFirstUrl(input);
+  if (!url) return null;
+  try {
+    return await autoGenerateBrandFromUrl(url);
+  } catch (e) {
+    console.warn('Auto-detect failed', e);
+    return null;
+  }
+}
+
+// In-memory only — never persisted. Resets on every page reload.
+let accessPassword = '';
+function getStoredPassword() { return accessPassword; }
+function setStoredPassword(pw) { accessPassword = pw; }
+function clearStoredPassword() { accessPassword = ''; }
+
+// payload: { task: 'listing', productInfo, brand, country } or { task: 'brand-profile', website, content }
+async function callClaude(payload) {
+  const res = await fetch('/.netlify/functions/ask-claude', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Access-Password': getStoredPassword(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.status === 401) {
+    clearStoredPassword();
+    showLoginOverlay('Session expired or password changed. Please sign in again.');
+    throw new Error('Not authorised. Please sign in again.');
+  }
+  if (!res.ok) {
+    const err = await res.text();
+    let msg = err;
+    try { msg = JSON.parse(err).error || err; } catch (e) {}
+    throw new Error('Claude API error: ' + msg);
+  }
+  const data = await res.json();
+  return data.text || '';
+}
+
+async function callWebFetch(url) {
+  const res = await fetch('/.netlify/functions/web-fetch?url=' + encodeURIComponent(url), {
+    headers: { 'X-Access-Password': getStoredPassword() },
+  });
+  if (res.status === 401) {
+    clearStoredPassword();
+    showLoginOverlay('Session expired or password changed. Please sign in again.');
+    throw new Error('Not authorised. Please sign in again.');
+  }
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Web fetch error: ' + err);
+  }
+  const data = await res.json();
+  return data.text || '';
+}
+
+// Shopify product URLs return rich JSON if you append .json. Try that first;
+// fall back to the regular fetch for non-Shopify pages.
+function getShopifyJsonUrl(url) {
+  try {
+    const u = new URL(url);
+    const m = u.pathname.match(/(.*\/products\/[a-z0-9-]+)(?:\.json)?\/?$/i);
+    if (!m) return null;
+    return u.origin + m[1] + '.json';
+  } catch (e) { return null; }
+}
+function htmlToText(s) {
+  return String(s || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ').trim();
+}
+function formatShopifyProduct(rawText, originalUrl) {
+  if (!rawText) return null;
+  let data;
+  try { data = JSON.parse(rawText); }
+  catch (e) {
+    const m = rawText.match(/\{[\s\S]*"product"[\s\S]*\}/);
+    if (!m) return null;
+    try { data = JSON.parse(m[0]); } catch (e2) { return null; }
+  }
+  const p = data && data.product;
+  if (!p) return null;
+  const lines = ['Source URL: ' + originalUrl];
+  if (p.title) lines.push('Product name: ' + p.title);
+  if (p.vendor) lines.push('Brand: ' + p.vendor);
+  if (p.product_type) lines.push('Product type: ' + p.product_type);
+  if (p.tags) lines.push('Tags: ' + (Array.isArray(p.tags) ? p.tags.join(', ') : p.tags));
+  if (p.body_html) lines.push('Description: ' + htmlToText(p.body_html));
+  if (p.variants && p.variants.length) {
+    const v = p.variants[0];
+    if (v.weight != null && v.weight_unit) lines.push('Weight: ' + v.weight + ' ' + v.weight_unit);
+    if (v.title && v.title !== 'Default Title') lines.push('Variant: ' + v.title);
+    if (v.price) lines.push('Price: ' + v.price);
+    if (v.sku) lines.push('SKU: ' + v.sku);
+  }
+  return lines.join('\n');
+}
+async function smartFetch(url) {
+  const jsonUrl = getShopifyJsonUrl(url);
+  if (jsonUrl) {
+    try {
+      const raw = await callWebFetch(jsonUrl);
+      const formatted = formatShopifyProduct(raw, url);
+      if (formatted) return formatted;
+    } catch (e) { /* fall through to regular fetch */ }
+  }
+  return await callWebFetch(url);
+}
+
+async function generateForInput(input, opts = {}) {
+  let brand = detectBrand(input);
+  let autoCreated = false;
+  if (!brand) {
+    const url = extractFirstUrl(input);
+    if (url) {
+      try {
+        brand = await autoGenerateBrandFromUrl(url);
+        autoCreated = true;
+      } catch (e) { /* fall through to no-brand */ }
+    }
+  }
+  const country = detectCountry(brand, input);
+  const brandInfo = brand ? { name: brand.name, origin: brand.origin, defaultBadges: brand.defaultBadges } : null;
+  const raw = await callClaude({ task: 'listing', productInfo: input, brand: brandInfo, country });
+  const { title, description } = parseGenerated(sanitizeOutput(String(raw).trim()));
+  return { title, text: description, brand, country, autoCreated };
+}
+
+// ============================
+// SINGLE MODE
+// ============================
+function updateBrandDetectFeedback() {
+  const url = document.getElementById('single-url').value.trim();
+  const text = document.getElementById('single-text').value.trim();
+  const combined = url + ' ' + text;
+  const feedbackEl = document.getElementById('brand-detect-feedback');
+  if (!combined.trim()) { feedbackEl.textContent = ''; return; }
+  const brand = detectBrand(combined);
+  if (brand) {
+    const country = detectCountry(brand, combined);
+    feedbackEl.innerHTML = 'Detected: <strong>' + escapeHtml(brand.name) + '</strong><span class="brand-badge">Made in ' + escapeHtml(country) + '</span>';
+  } else {
+    const url = extractFirstUrl(combined);
+    if (url) {
+      feedbackEl.innerHTML = '<span style="color:#0D47A1;">New brand. The artifact will auto-detect this brand from the URL when you click Generate.</span>';
+    } else {
+      feedbackEl.innerHTML = '<span style="color:#B71C1C;">No URL provided. Generation will use a generic prompt without brand origin.</span>';
+    }
+  }
+}
+document.getElementById('single-url').addEventListener('input', updateBrandDetectFeedback);
+document.getElementById('single-text').addEventListener('input', updateBrandDetectFeedback);
+
+document.getElementById('fetch-url-btn').addEventListener('click', async () => {
+  const url = document.getElementById('single-url').value.trim();
+  if (!url) { showStatus('single-status', 'error', 'Paste a URL first.'); return; }
+  showStatus('single-status', 'loading', 'Fetching ' + url + '...');
+  try {
+    const text = await smartFetch(url);
+    if (!text || text.length < 100) throw new Error('Empty content. Paste manually instead.');
+    document.getElementById('single-text').value = String(text).slice(0, 8000);
+    updateBrandDetectFeedback();
+    showStatus('single-status', 'success', 'Fetched ' + Math.min(8000, String(text).length) + ' characters.');
+  } catch (e) {
+    showStatus('single-status', 'error', 'Fetch failed: ' + (e.message || e));
+  }
+});
+
+document.getElementById('generate-single-btn').addEventListener('click', async () => {
+  const url = document.getElementById('single-url').value.trim();
+  const text = document.getElementById('single-text').value.trim();
+  if (!text && !url) { showStatus('single-status', 'error', 'Paste a URL or product info first.'); return; }
+  const productInfo = (url ? ('Source URL: ' + url + '\n\n') : '') + (text || '');
+  const btn = document.getElementById('generate-single-btn');
+  btn.disabled = true;
+  showStatus('single-status', 'loading', 'Generating description (will auto-detect new brand if needed)...');
+  try {
+    const { title, text: desc, brand, country, autoCreated } = await generateForInput(productInfo);
+    document.getElementById('single-title-output').textContent = title || '(no title returned)';
+    document.getElementById('single-output').textContent = desc;
+    document.getElementById('single-output-card').style.display = 'block';
+    const brandLabel = brand ? brand.name : 'Unknown brand (generic prompt used)';
+    const tag = autoCreated ? ' (auto-added to library)' : '';
+    showStatus('single-status', 'success', 'Generated using brand: ' + brandLabel + tag + ' · Country: ' + country);
+    updateBrandDetectFeedback();
+  } catch (e) {
+    showStatus('single-status', 'error', 'Generation failed: ' + (e.message || e));
+  } finally { btn.disabled = false; }
+});
+
+document.getElementById('clear-single-btn').addEventListener('click', () => {
+  document.getElementById('single-url').value = '';
+  document.getElementById('single-text').value = '';
+  document.getElementById('single-title-output').textContent = '';
+  document.getElementById('single-output').textContent = '';
+  document.getElementById('single-output-card').style.display = 'none';
+  clearStatus('single-status'); updateBrandDetectFeedback();
+});
+
+document.getElementById('copy-single-btn').addEventListener('click', () => {
+  const text = document.getElementById('single-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-single-btn'); const orig = btn.textContent;
+    btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+});
+
+document.getElementById('copy-single-title-btn').addEventListener('click', () => {
+  const text = document.getElementById('single-title-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-single-title-btn'); const orig = btn.textContent;
+    btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+});
+
+// ============================
+// CSV PARSER
+// ============================
+function parseCsv(text) {
+  const rows = []; let row = []; let field = ''; let inQuotes = false; let i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+        inQuotes = false; i++; continue;
+      }
+      field += c; i++; continue;
+    }
+    if (c === '"') { inQuotes = true; i++; continue; }
+    if (c === ',') { row.push(field); field = ''; i++; continue; }
+    if (c === '\r') { i++; continue; }
+    if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+    field += c; i++;
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  while (rows.length && rows[rows.length - 1].every(f => f === '')) rows.pop();
+  if (rows.length === 0) return { headers: [], rows: [] };
+  return {
+    headers: rows[0],
+    rows: rows.slice(1).map(r => {
+      const obj = {}; rows[0].forEach((h, idx) => { obj[h] = r[idx] || ''; }); return obj;
+    })
+  };
+}
+function csvEscape(value) {
+  const s = value == null ? '' : String(value);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function rowsToCsv(headers, rows) {
+  const lines = [headers.map(csvEscape).join(',')];
+  for (const r of rows) lines.push(headers.map(h => csvEscape(r[h])).join(','));
+  return lines.join('\n');
+}
+
+// ============================
+// BATCH MODE
+// ============================
+let csvData = null;
+let cancelBatch = false;
+
+document.getElementById('csv-file').addEventListener('change', (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    csvData = parseCsv(ev.target.result);
+    if (csvData.rows.length === 0) { showStatus('batch-status', 'error', 'CSV appears empty.'); return; }
+    if (!csvData.headers.includes('Faire title')) {
+      csvData.headers.push('Faire title');
+      csvData.rows.forEach(r => { r['Faire title'] = ''; });
+    }
+    if (!csvData.headers.includes('Faire description')) {
+      csvData.headers.push('Faire description');
+      csvData.rows.forEach(r => { r['Faire description'] = ''; });
+    }
+    csvData.rows.forEach(r => {
+      const combined = Object.values(r).join(' ');
+      const brand = detectBrand(combined);
+      r._brand = brand ? brand.name : '(unknown)';
+      r._country = detectCountry(brand, combined);
+    });
+    renderCsvPreview();
+    document.getElementById('batch-controls-card').style.display = 'block';
+  };
+  reader.readAsText(file);
+});
+
+function renderCsvPreview() {
+  const c = document.getElementById('csv-preview-container');
+  const visibleCols = csvData.headers.filter(h => h !== 'Faire description' && h !== 'Faire title').slice(0, 3);
+  const brandCounts = {};
+  csvData.rows.forEach(r => { brandCounts[r._brand] = (brandCounts[r._brand] || 0) + 1; });
+  const brandSummary = Object.entries(brandCounts).map(([n, c]) => n + ' (' + c + ')').join(', ');
+
+  let html = '<div class="kv" style="margin-top:12px;"><strong>' + csvData.rows.length + ' rows</strong> &middot; <strong>' + csvData.headers.length + ' columns</strong></div>';
+  html += '<div class="kv" style="margin-top:4px;">Detected brands: <strong>' + escapeHtml(brandSummary) + '</strong></div>';
+  html += '<div class="tip">Unknown brands will be auto-added during generation (one fetch per new domain).</div>';
+  html += '<table class="csv-table" id="csv-table"><thead><tr>';
+  html += '<th style="width:30px;">#</th>';
+  visibleCols.forEach(h => { html += '<th>' + escapeHtml(h) + '</th>'; });
+  html += '<th>Brand</th><th>Country</th><th>Status</th></tr></thead><tbody>';
+  csvData.rows.forEach((r, idx) => {
+    html += '<tr data-row="' + idx + '">';
+    html += '<td>' + (idx + 1) + '</td>';
+    visibleCols.forEach(h => { html += '<td title="' + escapeAttr(r[h]) + '">' + escapeHtml((r[h] || '').slice(0, 80)) + '</td>'; });
+    html += '<td>' + escapeHtml(r._brand) + '</td>';
+    html += '<td>' + escapeHtml(r._country) + '</td>';
+    html += '<td class="status-cell">' + (r['Faire description'] ? 'done' : 'pending') + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  c.innerHTML = html;
+}
+
+function refreshRowBrandTags() {
+  csvData.rows.forEach((r, idx) => {
+    const combined = Object.values(r).join(' ');
+    const brand = detectBrand(combined);
+    r._brand = brand ? brand.name : '(unknown)';
+    r._country = detectCountry(brand, combined);
+    const tr = document.querySelector('tr[data-row="' + idx + '"]');
+    if (tr) {
+      const tds = tr.querySelectorAll('td');
+      tds[tds.length - 3].textContent = r._brand;
+      tds[tds.length - 2].textContent = r._country;
+    }
+  });
+}
+
+document.getElementById('generate-all-btn').addEventListener('click', async () => {
+  if (!csvData) return;
+  cancelBatch = false;
+  const btn = document.getElementById('generate-all-btn');
+  const cancelBtn = document.getElementById('cancel-batch-btn');
+  const downloadBtn = document.getElementById('download-csv-btn');
+  btn.disabled = true;
+  cancelBtn.style.display = 'inline-block';
+  downloadBtn.style.display = 'none';
+  document.getElementById('progress-bar').style.display = 'block';
+  clearStatus('batch-status');
+
+  const total = csvData.rows.length;
+  let done = 0, errors = 0;
+
+  for (let i = 0; i < csvData.rows.length; i++) {
+    if (cancelBatch) { showStatus('batch-status', 'error', 'Cancelled at ' + done + '/' + total); break; }
+    const row = csvData.rows[i];
+    if (row['Faire description'] && row['Faire description'].length > 50) { done++; updateProgress(done, total); continue; }
+    const tr = document.querySelector('tr[data-row="' + i + '"]');
+    if (tr) { tr.classList.add('processing'); tr.querySelector('.status-cell').textContent = 'generating...'; }
+    try {
+      const info = csvData.headers
+        .filter(h => h !== 'Faire description' && h !== 'Faire title' && !h.startsWith('_'))
+        .map(h => h + ': ' + (row[h] || '').replace(/\s+/g, ' ').slice(0, 1200))
+        .join('\n');
+      const { title, text: desc, brand, country, autoCreated } = await generateForInput(info);
+      row['Faire title'] = title;
+      row['Faire description'] = desc;
+      row._brand = brand ? brand.name : '(unknown)';
+      row._country = country;
+      if (autoCreated) refreshRowBrandTags();
+      if (tr) {
+        tr.classList.remove('processing'); tr.classList.add('processed');
+        tr.querySelector('.status-cell').textContent = 'done';
+        const tds = tr.querySelectorAll('td');
+        tds[tds.length - 3].textContent = row._brand;
+        tds[tds.length - 2].textContent = row._country;
+      }
+    } catch (e) {
+      errors++;
+      if (tr) { tr.classList.remove('processing'); tr.classList.add('error-row'); tr.querySelector('.status-cell').textContent = 'error'; }
+    }
+    done++;
+    updateProgress(done, total);
+  }
+
+  btn.disabled = false;
+  cancelBtn.style.display = 'none';
+  downloadBtn.style.display = 'inline-block';
+  showStatus('batch-status', errors ? 'error' : 'success', 'Finished: ' + done + ' processed, ' + errors + ' errors.');
+});
+
+function updateProgress(done, total) {
+  document.getElementById('progress-fill').style.width = Math.round((done / total) * 100) + '%';
+}
+
+document.getElementById('cancel-batch-btn').addEventListener('click', () => { cancelBatch = true; });
+
+document.getElementById('download-csv-btn').addEventListener('click', () => {
+  if (!csvData) return;
+  const exportHeaders = csvData.headers.filter(h => !h.startsWith('_'));
+  const exportRows = csvData.rows.map(r => {
+    const o = {}; exportHeaders.forEach(h => { o[h] = r[h]; }); return o;
+  });
+  const csv = rowsToCsv(exportHeaders, exportRows);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'faire_descriptions_' + Date.now() + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ============================
+// FAIRE XLSX MODE
+// ============================
+// Preserves the full workbook (all sheets, rows, columns) and only rewrites
+// the Product Name (col A) and Description (English) (col E, typically) cells.
+// Data rows begin at row 4 (rows 1-3 are Faire's header/annotation/API metadata).
+let faireState = null; // { workbook, sheet, sheetName, nameCol, descCol, tokenCol, dataStartRow, rows: [{r, name, desc, token, ...}], groups: {key: {rows: [r], repInfo: string}} }
+let faireCancel = false;
+
+function letterToCol(letter) {
+  // e.g. 'A' -> 1, 'E' -> 5
+  let col = 0;
+  for (const ch of letter.toUpperCase()) col = col * 26 + (ch.charCodeAt(0) - 64);
+  return col;
+}
+
+function findFaireColumns(sheet) {
+  // Look at row 1 for header names
+  const range = XLSX.utils.decode_range(sheet['!ref']);
+  const cols = {};
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: c });
+    const val = sheet[addr] && sheet[addr].v;
+    if (typeof val === 'string') {
+      const s = val.toLowerCase();
+      if (s === 'product name (english)') cols.name = c + 1;
+      else if (s === 'description (english)') cols.desc = c + 1;
+      else if (s === 'product token') cols.token = c + 1;
+      else if (s === 'option 1 value') cols.opt1 = c + 1;
+      else if (s === 'usd unit wholesale price') cols.wholesale = c + 1;
+      else if (s === 'usd unit retail price') cols.retail = c + 1;
+      else if (s === 'made in country') cols.made_in = c + 1;
+      else if (s === 'item weight') cols.item_weight = c + 1;
+      else if (s === 'item weight unit') cols.item_weight_unit = c + 1;
+      else if (s === 'case size') cols.case_size = c + 1;
+    }
+  }
+  return cols;
+}
+
+function getCell(sheet, row1based, col1based) {
+  const addr = XLSX.utils.encode_cell({ r: row1based - 1, c: col1based - 1 });
+  return sheet[addr] && sheet[addr].v;
+}
+
+function setCell(sheet, row1based, col1based, value) {
+  const addr = XLSX.utils.encode_cell({ r: row1based - 1, c: col1based - 1 });
+  if (sheet[addr]) {
+    sheet[addr].v = value;
+    sheet[addr].t = 's';
+    delete sheet[addr].w; delete sheet[addr].f;
+  } else {
+    sheet[addr] = { v: value, t: 's' };
+  }
+  // Expand the sheet's !ref if needed
+  const range = XLSX.utils.decode_range(sheet['!ref']);
+  if (row1based - 1 > range.e.r) range.e.r = row1based - 1;
+  if (col1based - 1 > range.e.c) range.e.c = col1based - 1;
+  sheet['!ref'] = XLSX.utils.encode_range(range);
+}
+
+function collectFaireRows(sheet, cols) {
+  const range = XLSX.utils.decode_range(sheet['!ref']);
+  const dataStartRow = 4; // Faire template convention: rows 1-3 are headers/metadata
+  const rows = [];
+  for (let r = dataStartRow; r <= range.e.r + 1; r++) {
+    const name = cols.name ? getCell(sheet, r, cols.name) : null;
+    if (!name) continue;
+    rows.push({
+      r,
+      name: String(name),
+      token: cols.token ? getCell(sheet, r, cols.token) : null,
+      desc: cols.desc ? (getCell(sheet, r, cols.desc) || '') : '',
+      opt1: cols.opt1 ? getCell(sheet, r, cols.opt1) : null,
+      made_in: cols.made_in ? getCell(sheet, r, cols.made_in) : null,
+      item_weight: cols.item_weight ? getCell(sheet, r, cols.item_weight) : null,
+      item_weight_unit: cols.item_weight_unit ? getCell(sheet, r, cols.item_weight_unit) : null,
+      case_size: cols.case_size ? getCell(sheet, r, cols.case_size) : null,
+    });
+  }
+  return rows;
+}
+
+function groupFaireRows(rows) {
+  // Group by token when present, otherwise by product name.
+  const groups = {};
+  for (const row of rows) {
+    const key = row.token || row.name;
+    if (!groups[key]) groups[key] = { rows: [], name: row.name, token: row.token };
+    groups[key].rows.push(row);
+  }
+  return groups;
+}
+
+document.getElementById('faire-file').addEventListener('change', async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  showStatus('faire-status', 'loading', 'Reading XLSX...');
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array', cellStyles: true, cellDates: true, cellNF: true });
+    // Prefer a "Products" sheet, otherwise first sheet
+    const sheetName = wb.SheetNames.includes('Products') ? 'Products' : wb.SheetNames[0];
+    const sheet = wb.Sheets[sheetName];
+    const cols = findFaireColumns(sheet);
+    if (!cols.name || !cols.desc) {
+      throw new Error('Could not find "Product Name (English)" and/or "Description (English)" columns in the ' + sheetName + ' sheet. Is this the Faire template?');
+    }
+    const rows = collectFaireRows(sheet, cols);
+    const groups = groupFaireRows(rows);
+    faireState = { workbook: wb, sheet, sheetName, cols, rows, groups, filename: file.name };
+    renderFairePreview();
+    document.getElementById('faire-controls-card').style.display = 'block';
+    showStatus('faire-status', 'success', 'Loaded ' + rows.length + ' product rows across ' + Object.keys(groups).length + ' unique products.');
+  } catch (err) {
+    showStatus('faire-status', 'error', 'Could not read file: ' + (err.message || err));
+  }
+});
+
+function renderFairePreview() {
+  const c = document.getElementById('faire-preview-container');
+  const groups = faireState.groups;
+  const totalRows = faireState.rows.length;
+  const uniqueCount = Object.keys(groups).length;
+
+  let html = '<div class="kv" style="margin-top:12px;"><strong>' + totalRows + ' data rows</strong> &middot; <strong>' + uniqueCount + ' unique products</strong> (variants share the same title/description).</div>';
+  html += '<div class="tip" style="margin-top:8px;">Sheet: <strong>' + escapeHtml(faireState.sheetName) + '</strong> &middot; Title column: <strong>' + faireState.cols.name + '</strong> &middot; Description column: <strong>' + faireState.cols.desc + '</strong></div>';
+  html += '<table class="csv-table" id="faire-table"><thead><tr><th style="width:30px;">#</th><th>Product name</th><th>Variants</th><th>Current title chars</th><th>Current desc chars</th><th>Status</th></tr></thead><tbody>';
+  let idx = 0;
+  for (const key of Object.keys(groups)) {
+    const g = groups[key];
+    const first = g.rows[0];
+    const titleLen = (first.name || '').length;
+    const descLen = (first.desc || '').length;
+    html += '<tr data-group="' + escapeAttr(key) + '">';
+    html += '<td>' + (++idx) + '</td>';
+    html += '<td title="' + escapeAttr(first.name) + '">' + escapeHtml((first.name || '').slice(0, 80)) + '</td>';
+    html += '<td>' + g.rows.length + '</td>';
+    html += '<td>' + titleLen + '</td>';
+    html += '<td>' + descLen + '</td>';
+    html += '<td class="status-cell">pending</td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  c.innerHTML = html;
+}
+
+function buildFaireInfoForGroup(group) {
+  // Concatenate the useful non-empty info from the first row so Claude has enough
+  // context to write a good title + description.
+  const first = group.rows[0];
+  const parts = ['Product name: ' + first.name];
+  if (group.rows.length > 1) {
+    parts.push('Variant count: ' + group.rows.length);
+    const optNames = group.rows.map(r => r.opt1).filter(Boolean);
+    if (optNames.length) parts.push('Variants: ' + optNames.join(', '));
+  }
+  if (first.desc) parts.push('Current description (may need improvement):\n' + first.desc);
+  if (first.made_in) parts.push('Made in: ' + first.made_in);
+  if (first.item_weight) parts.push('Item weight: ' + first.item_weight + ' ' + (first.item_weight_unit || ''));
+  if (first.case_size) parts.push('Case size: ' + first.case_size);
+  return parts.join('\n');
+}
+
+document.getElementById('faire-generate-btn').addEventListener('click', async () => {
+  if (!faireState) return;
+  faireCancel = false;
+  const btn = document.getElementById('faire-generate-btn');
+  const cancelBtn = document.getElementById('faire-cancel-btn');
+  const downloadBtn = document.getElementById('faire-download-btn');
+  const overwrite = document.getElementById('faire-overwrite').checked;
+  btn.disabled = true;
+  cancelBtn.style.display = 'inline-block';
+  downloadBtn.style.display = 'none';
+  document.getElementById('faire-progress-bar').style.display = 'block';
+  clearStatus('faire-status');
+
+  const groups = faireState.groups;
+  const keys = Object.keys(groups);
+  let done = 0, errors = 0, skipped = 0;
+
+  for (const key of keys) {
+    if (faireCancel) { showStatus('faire-status', 'error', 'Cancelled at ' + done + '/' + keys.length); break; }
+    const g = groups[key];
+    const tr = document.querySelector('tr[data-group="' + cssEscape(key) + '"]');
+    if (tr) { tr.classList.add('processing'); tr.querySelector('.status-cell').textContent = 'generating...'; }
+
+    // Skip if not overwriting and current title+desc look already OK
+    const first = g.rows[0];
+    const titleOK = first.name && first.name.length <= 60 && first.name.length >= 10;
+    const descOK = first.desc && first.desc.length >= 200;
+    if (!overwrite && titleOK && descOK) {
+      if (tr) { tr.classList.remove('processing'); tr.classList.add('processed'); tr.querySelector('.status-cell').textContent = 'skipped (already OK)'; }
+      done++; skipped++;
+      updateFaireProgress(done, keys.length);
+      continue;
+    }
+
+    try {
+      const info = buildFaireInfoForGroup(g);
+      const { title, text: desc } = await generateForInput(info);
+      // Truncate title to 60 chars if the model went over
+      const finalTitle = (title || first.name || '').slice(0, 60);
+      const finalDesc = desc || first.desc;
+      // Write to every row in this group
+      for (const row of g.rows) {
+        setCell(faireState.sheet, row.r, faireState.cols.name, finalTitle);
+        setCell(faireState.sheet, row.r, faireState.cols.desc, finalDesc);
+        row.name = finalTitle;
+        row.desc = finalDesc;
+      }
+      if (tr) { tr.classList.remove('processing'); tr.classList.add('processed'); tr.querySelector('.status-cell').textContent = 'done'; }
+    } catch (err) {
+      errors++;
+      if (tr) { tr.classList.remove('processing'); tr.classList.add('error-row'); tr.querySelector('.status-cell').textContent = 'error'; }
+    }
+    done++;
+    updateFaireProgress(done, keys.length);
+  }
+
+  btn.disabled = false;
+  cancelBtn.style.display = 'none';
+  downloadBtn.style.display = 'inline-block';
+  const msg = 'Finished: ' + done + ' processed, ' + skipped + ' skipped, ' + errors + ' errors.';
+  showStatus('faire-status', errors ? 'error' : 'success', msg);
+});
+
+function updateFaireProgress(done, total) {
+  document.getElementById('faire-progress-fill').style.width = Math.round((done / total) * 100) + '%';
+}
+
+document.getElementById('faire-cancel-btn').addEventListener('click', () => { faireCancel = true; });
+
+document.getElementById('faire-download-btn').addEventListener('click', () => {
+  if (!faireState) return;
+  const wbout = XLSX.write(faireState.workbook, { bookType: 'xlsx', type: 'array', cellStyles: true });
+  const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const base = (faireState.filename || 'faire').replace(/\.xlsx$/i, '');
+  a.href = url; a.download = base + '-updated-' + Date.now() + '.xlsx'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Safe CSS attr selector escaping for group keys
+function cssEscape(s) {
+  return String(s).replace(/["\\]/g, '\\$&');
+}
+
+</script>
+</body>
+</html>

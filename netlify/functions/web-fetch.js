@@ -1,70 +1,50 @@
-// Netlify serverless function that fetches a URL server-side.
-// Used by the artifact to avoid browser CORS restrictions.
-// Requires ACCESS_PASSWORD env var to match the X-Access-Password header.
+// Netlify serverless function that fetches a public web page server-side.
+// Used by the generator to read brand and product pages without browser CORS limits.
+// Requires the ACCESS_PASSWORD env var to match the X-Access-Password header.
+// Destinations are restricted to public https websites (see ../lib/public-fetch.js),
+// including every redirect hop, with time and size limits.
 
-exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: cors(), body: '' };
-  }
-  // Password gate
-  const required = process.env.ACCESS_PASSWORD;
-  if (!required) {
-    return {
-      statusCode: 500,
-      headers: cors(),
-      body: JSON.stringify({ error: 'ACCESS_PASSWORD env var is not set in Netlify.' }),
-    };
-  }
-  const headers = event.headers || {};
-  const provided = headers['x-access-password'] || headers['X-Access-Password'] || '';
-  if (provided !== required) {
-    return {
-      statusCode: 401,
-      headers: cors(),
-      body: JSON.stringify({ error: 'Invalid or missing access password.' }),
-    };
-  }
-  const url = event.queryStringParameters && event.queryStringParameters.url;
-  if (!url) {
-    return {
-      statusCode: 400,
-      headers: cors(),
-      body: JSON.stringify({ error: 'Missing url query parameter.' }),
-    };
-  }
-  if (!/^https?:\/\//i.test(url)) {
-    return {
-      statusCode: 400,
-      headers: cors(),
-      body: JSON.stringify({ error: 'URL must start with http:// or https://' }),
-    };
-  }
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; FaireDescGen/1.0)',
-        Accept: 'application/json, text/html, application/xhtml+xml;q=0.9, */*;q=0.8',
-      },
-      redirect: 'follow',
-    });
-    const raw = await res.text();
-    const contentType = (res.headers.get('content-type') || '').toLowerCase();
-    const isJson = contentType.includes('application/json') || contentType.includes('text/json');
-    // JSON passes through untouched. Strip HTML for everything else.
-    const text = (isJson ? raw : stripHtml(raw)).slice(0, 50000);
-    return {
-      statusCode: 200,
-      headers: { ...cors(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, status: res.status, contentType }),
-    };
-  } catch (err) {
-    return {
-      statusCode: 500,
-      headers: cors(),
-      body: JSON.stringify({ error: 'Fetch failed: ' + (err.message || String(err)) }),
-    };
-  }
-};
+const { checkAccess } = require('../lib/access');
+const { fetchPublic, FetchPolicyError } = require('../lib/public-fetch');
+
+function createHandler(deps = {}) {
+  const env = deps.env || process.env;
+  const fetchImpl = deps.fetchPublic || ((url) => fetchPublic(url, { env }));
+
+  return async (event) => {
+    if (event.httpMethod === 'OPTIONS') {
+      return { statusCode: 204, headers: cors(), body: '' };
+    }
+    if (event.httpMethod !== 'GET') {
+      return reply(405, { error: 'Method not allowed' });
+    }
+    // Authorization comes first: nothing is fetched for unauthorized callers.
+    const denied = checkAccess(event, env);
+    if (denied) return reply(denied.statusCode, { error: denied.error });
+
+    const url = event.queryStringParameters && event.queryStringParameters.url;
+    if (!url || typeof url !== 'string' || url.length > 2048) {
+      return reply(400, { error: 'Missing or invalid url query parameter.' });
+    }
+
+    try {
+      const res = await fetchImpl(url);
+      const isJson = res.contentType.includes('application/json') || res.contentType.includes('text/json');
+      // JSON passes through untouched. Strip HTML for everything else.
+      const text = (isJson ? res.body : stripHtml(res.body)).slice(0, 50000);
+      return reply(200, { text, status: res.status, contentType: res.contentType });
+    } catch (err) {
+      if (err instanceof FetchPolicyError) {
+        return reply(err.status, { error: 'Fetch not allowed or failed: ' + err.code });
+      }
+      return reply(502, { error: 'Fetch failed.' });
+    }
+  };
+}
+
+function reply(statusCode, body) {
+  return { statusCode, headers: { ...cors(), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify(body) };
+}
 
 function stripHtml(html) {
   return html
@@ -90,3 +70,6 @@ function cors() {
     'Access-Control-Allow-Headers': 'Content-Type, X-Access-Password',
   };
 }
+
+exports.handler = createHandler();
+exports.createHandler = createHandler;

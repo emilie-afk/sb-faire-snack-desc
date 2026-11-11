@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "listingTemplate": "FICTIONAL TEMPLATE. Brand: {{brandName}}. Origin: {{country}}.\nBrand paragraph: \"{{origin}}\"\nAlways include: {{badges}}\nExample:\n{{exampleDescription}}\nProduct:\n{{productInfo}}\nReturn TITLE: and DESCRIPTION:",
+  "exampleDescription": "Fictional example description.",
+  "noOriginText": "Fictional text used when a brand has no origin paragraph.",
+  "defaultBadges": "Fictional Badge",
+  "unknownBrandName": "Unknown brand",
+  "brandProfileTemplate": "FICTIONAL. Read {{website}} and return JSON with name, origin, defaultCountry, defaultBadges.\n{{content}}"
+}
