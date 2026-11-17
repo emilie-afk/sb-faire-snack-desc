@@ -1,27 +1,5 @@
-## Private style guide (not in Git)
+# Faire Snack Description Writer
 
-The writing guide (voice, rules, examples, prompt template) is confidential and
-lives only in this site's **Netlify Blobs** store `private-config`, key `faire-style-guide`.
-The page sends only the user's input and options; the prompt is assembled on the
-server after the password check, and only the generated text is returned. If the
-guide is missing or invalid, the tool answers 503 "Style guide is not configured"
-before any paid model call.
-
-Setup (owner approval required; it changes production configuration):
-1. Keep the real guide JSON **outside** this repository and any published folder.
-   Shape: `docs/style-guide.example.json` (fictional).
-2. `npm install`, then
-   `NETLIFY_SITE_ID=<site id> NETLIFY_AUTH_TOKEN=<token> node scripts/upload-style-guide.mjs /path/to/guide.json`
-   (prints size and fingerprint only).
-3. Deploy. Later guide edits: upload again; no redeploy needed (picked up within about a minute).
-
-Other settings: ACCESS_PASSWORD, ANTHROPIC_API_KEY; optional FETCH_ALLOWED_HOSTS (comma-separated domains) to limit brand-page fetching further.
-
-Tests: `npm test` (mocked model, fictional guide and credentials).
-
-Preview check (no paid model call): `PREVIEW_PASSWORD=<password> node scripts/preview-check.mjs https://deploy-preview-N--<site>.netlify.app --guide /path/outside/repo/guide.json`
-— confirms unauthenticated requests are refused, sign-in works, the function can read the private
-guide (400 for a deliberately incomplete request; 503 means missing or unreadable), and the
-published page contains no guide text (prints counts only).
+Drafts product descriptions for snack listings on Faire.
 
 Designed and built by Emilie Ngo for Succulents Box.
